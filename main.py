@@ -21,3 +21,5 @@ def search_companies(company_name: str):
 
 
 
+
+#fixed

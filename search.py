@@ -1,18 +1,20 @@
-from helper.client import create_client
+#This is just basic search functionality to find the name of the companies
+
+from client import create_client
 from datetime import date
 import os
+from zeep import helpers #so we can actually do something with the response
 
-def search():
-    client = create_client()
+def search(company_name, exact_search = True, search_area = 1):
+    client = create_client() #for now
 
-    # Ensure output directory exists
-    output_dir = "output"
-    os.makedirs(output_dir, exist_ok=True)
+    # Ensure output directory exists WE MIGHT USE THIS LATER???
+    #output_dir = "search_results"
+    #os.makedirs(output_dir, exist_ok=True)
 
-    # Step 1: Call SUCHEFIRMA
-    #SUCHFIRMA finds the ids of companies with the name FIRMENWORTLAUT
+    #SUCHFIRMA finds the ids of companies with the name like FIRMENWORTLAUT
     suche_params = {
-        "FIRMENWORTLAUT": "Signa Prime",
+        "FIRMENWORTLAUT": company_name,
         "EXAKTESUCHE": True, #we can change this later
         "SUCHBEREICH": 1, #Location of the search, I'm not sure what the maximum is
         "GERICHT": "",
@@ -24,41 +26,45 @@ def search():
     suche_response = client.service.SUCHEFIRMA(**suche_params)
     ergebnisse = suche_response.ERGEBNIS #this is a list with the information needed for AUSZUG_V2_
 
-    print(f"Found {len(ergebnisse)} companies for 'Signa Prime'")
-    print(ergebnisse[0])
-    print(type(suche_response))
+    print(f"Found {len(ergebnisse)} companies for 'Signa Prime'---------------------------------------------------\n\n\n")
+    #print(ergebnisse[0])
+    #print(type(suche_response))
 
-    # Step 2: Iterate and call AUSZUG_V2_
+    
+    results = display_results(client, ergebnisse)
+    #print(type(results))
+
+    return results
+
+
+def display_results(client, ergebnisse):
+    results = []
     for ergebnis in ergebnisse:
         fnr = ergebnis.FNR
         name = ergebnis.NAME[0]
-        stichtag = date.today().isoformat()
+        timestamp = date.today().isoformat()
         umfang = "Kurzinformation"
 
-        print(f"\n🔍 Requesting AUSZUG_V2_ for: {name} (FNR: {fnr})")
-
+        #print(f"\n🔍 Requesting AUSZUG_V2_ for: {name} (FNR: {fnr})")
+    
         auszug_params = {
             "FNR": fnr,
-            "STICHTAG": stichtag,
+            "STICHTAG": timestamp,
             "UMFANG": umfang
         }
 
+
         try:
             auszug_response = client.service.AUSZUG_V2_(**auszug_params)
-
-            # Create a safe filename
-            safe_name = name.replace(" ", "_").replace("/", "_")
-            filename = f"{fnr}_{safe_name}.txt"
-            filepath = os.path.join(output_dir, filename)
-
-            # Save response to file
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(str(auszug_response))
-
-            print(f"✅ Saved to {filepath}")
-
+            data_dict = helpers.serialize_object(auszug_response)
+            r = data_dict['FIRMA']['FI_DKZ02'][0]['BEZEICHNUNG'] #this is not optimal
+            results.append(r)
         except Exception as e:
-            print(f"❌ Error for FNR {fnr}: {e}")
+            print(e)
+            return e
+
+    #print(type(results))
+    return results
 
 if __name__ == "__main__":
-    search()
+    search('Signa prime')
