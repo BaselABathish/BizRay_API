@@ -3,6 +3,7 @@ import requests
 from client import create_client
 
 from search import search
+from view_company import view_company
 
 app = FastAPI()
 client = create_client()
@@ -18,8 +19,9 @@ def search_companies(company_name: str):
     print(type(r))
     return {"Results": r}
 
+@app.get("/view/{fnr}")
+def view(fnr): #might be wise to change it to FNR later for more specificity
+    return {"Data": view_company(fnr)}
 
 
 
-
-#fixed

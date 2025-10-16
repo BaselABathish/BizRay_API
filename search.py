@@ -58,7 +58,8 @@ def display_results(client, ergebnisse):
             auszug_response = client.service.AUSZUG_V2_(**auszug_params)
             data_dict = helpers.serialize_object(auszug_response)
             r = data_dict['FIRMA']['FI_DKZ02'][0]['BEZEICHNUNG'] #this is not optimal
-            results.append(r)
+            fnr = data_dict['FNR']
+            results.append((r, fnr))
         except Exception as e:
             print(e)
             return e
